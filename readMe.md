@@ -54,7 +54,6 @@
    | ---- | ------ | ------ | ---------------------- | -------- | ----- |
    | 1    | 可能否 | 木小雅 | /home/yang/music/songs | 3.5M     | 03:47 |
 
-
 ------
 
 - #### mplayer命令	2018.07.01
@@ -71,11 +70,11 @@
 
   （5）`get_time_pos` 获取当前位置
 
-  （6）`get_time_length` 获取时长
+  （6）`get_time_length` 获取时长--
 
   （7）`get_file_name` 获取文件名
 
-    (8)  `seek <value> [type]`     快进快退
+    (8)  `seek <value> [type]`     快进快退se
 
   Seek to some place in the movie. 
 
