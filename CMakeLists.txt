@@ -1,5 +1,5 @@
 # This is a templet of cmake config file
-# Author Yang 2017-05-10
+# Author YangZG 2017-05-10
 # TODO:Auto Detect compile environment
 # Brief: (sign '#' )
 #		(1) Mutiple thread program need have these configures:
@@ -18,40 +18,38 @@
 
 cmake_minimum_required(VERSION 2.8)
 
-
 set(CMAKE_SYSTEM_NAME Linux)
 
 # Define project name
-project(music)
+project(mplayer)
 
-#设置编译参数
-SET(CMAKE_BUILD_TYPE "Debug") 
-SET(CMAKE_C_FLAGS_DEBUG "-g -Wall")
-#SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
-#SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+# gdb mode debug
+#SET(CMAKE_BUILD_TYPE "Debug") 
+#SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -W -Wall -g -ggdb -m32")
+#SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -W -Wall -m32")
+
+SET(CMAKE_C_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -W -Wall -g -ggdb -m32")
+SET(CMAKE_C_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -W -Wall -m32")
 
 # set compile flags
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
-#设置include路径
-set(USER_INCLUDES . )
-
-#设置编译时依赖的库
-#find_package(Threads)
-
-
+#设置包含路径
+set(USER_INCLUDES include)
+#查找多线程库
+find_package(Threads)
 
 # Add headers location to your include paths
 include_directories(${USER_INCLUDES})
 
-#设置源文件 .c .cpp，使用相对路径
+# Declare the executable target built from your sources
 add_executable(
-				music
-				manipulate_sqlite3.c
+				mplayer
+				main.c
 				music.c
+				manipulate_sqlite3.c
 			  )
 
 # Link your application with OpenCV libraries and other necessary libs(such as :libpthread ... libopengl ... libxxx)
-#target_link_libraries(testme ${CMAKE_THREAD_LIBS_INIT})
-
-
+target_link_libraries(mplayer sqlite3)#link libsqlite3 and libm(math)
+target_link_libraries(mplayer ${CMAKE_THREAD_LIBS_INIT})
