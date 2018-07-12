@@ -13,8 +13,8 @@
 /* Include heads */
 #include <stdio.h>
 #include <sqlite3.h>
-typedef int (*sqlite3_callback)(void*, int, char**, char**);
-
+#include "music.h"
+typedef int (*sqlite3_callback)(void*, int, char**, char**);  //define sqlite3 callback
 
 
 /*****************************************************************************
@@ -60,5 +60,15 @@ void exec_sqlite3(char *sql, sqlite3_callback callback);
 /*作者：yang
 /*******************************************************************************/
 int load_song_name(void* para, int n_col, char** col_value, char** col_name);
+/*****************************************************************************
+/*名称： load_song_path
+/*描述： 回调函数
+/*作成日期：2018/07/04
+/*参数：
+		
+/*返回值：
+/*作者：yang
+/*******************************************************************************/
+int load_song_path(void* para, int n_col, char** col_value, char** col_name);
 
 #endif
