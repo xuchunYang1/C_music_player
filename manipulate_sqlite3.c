@@ -11,11 +11,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-sqlite3 *db = 0; 	//database point
+static sqlite3 *db = 0; 	//database point
 static int song_index = 0;  //歌曲的索引
 static int path_index = 0;
-char* song_path[6] = {NULL};  //save path
-static int j = 0;
+char* song_path[MAXSONGNUM] = {NULL};  //save path
+static int j = 0;	
 /*****************************************************************************
 /*名称： open_sqlite3
 /*描述： 打开数据库
@@ -25,13 +25,13 @@ static int j = 0;
 /*返回值：
 /*作者：yang
 /*******************************************************************************/
-int open_sqlite3()
+int open_sqlite3(char* database)
 {	
 	//return value
 	int ret = 0;
 	
 	//open database
-	ret = sqlite3_open("./music.db", &db);
+	ret = sqlite3_open(database, &db);
 	
 	//if open failed
 	if (ret != SQLITE_OK)
@@ -71,7 +71,7 @@ void close_sqlite3()
 /*******************************************************************************/
 void exec_sqlite3(char *sql, sqlite3_callback callback)
 {
-	printf("exec_sqlite3\n");
+	//printf("exec_sqlite3\n");
 	int ret = 0;
 	//error
 	char *errmsg = 0;
@@ -133,7 +133,7 @@ int load_song_path(void* para, int n_col, char** col_value, char** col_name)
 		 
 		strcpy(song_path[j], col_value[i]);
 		//  //printf("%4d\t%s\n", path_index, col_value[i]);
-		// printf("path: %s\n", song_path[j]);
+		//printf("path: %s\n", song_path[j]);
 		j++;
 	}
 

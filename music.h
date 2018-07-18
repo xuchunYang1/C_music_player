@@ -13,10 +13,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <termios.h>
 #include "manipulate_sqlite3.h"  
 
+
+enum PLAYER_OPTIONS
+{
+	QUIT = '0',
+	PLAY,
+	SWITCH_PREVIEW,
+	PAUSE,
+	SWITCH_NEXT,
+	FAST_FORWARD,
+	SINGLE_LOOP,
+	LIST_LOOP,
+	RANDOM,
+	HELPME
+};
 // some defines
-#define MAXB 128
+#define MAXSONGNUM 6
 #define CLEAR system("clear");
 #define PRINT_INTERFACE \
 		printf("---------------------------------------------------------\n");\
@@ -40,7 +58,7 @@
 
 		
 #define HELP \
-		printf("--------------------------help---------------------------\n");\
+		printf(----------------------------help------------------------------\n);\
 		printf("\tb、\t播放列表 \n");\
 		printf("\tg、\t歌曲名\n");\
 		printf("\td、\t播放进度\n");\
@@ -64,15 +82,13 @@ void show_playlist(char* sql);
 /*作者：yang
 /*******************************************************************************/
 void show_interface();
-/*****************************************************************************
-/*名称： play_sequence
-/*描述： play in order 
-/*作成日期：2018/07/12
-/*参数：sql   sql_select_path
-/*返回值：
-/*作者：yang
-/*******************************************************************************/
-void play_sequence(char* sql);
+void load_playlist(char* sql_path);
+void do_play();
+void do_exit();
+void do_preview();
+void do_next();
+void menu();
+int kbhit(void);
 
 
 #endif

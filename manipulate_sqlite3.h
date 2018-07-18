@@ -26,7 +26,7 @@ typedef int (*sqlite3_callback)(void*, int, char**, char**);  //define sqlite3 c
 /*返回值：
 /*作者：yang
 /*******************************************************************************/
-int open_sqlite3();
+int open_sqlite3(char* database);
 
 /*****************************************************************************
 /*名称： close_sqlite3
