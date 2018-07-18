@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <termios.h>
+#include <sys/stat.h>
 #include "manipulate_sqlite3.h"  
 
 
@@ -34,6 +35,8 @@ enum PLAYER_OPTIONS
 	HELPME
 };
 // some defines
+#define MAXB 128
+#define FIFO "./cmdfifo"
 #define MAXSONGNUM 6
 #define CLEAR system("clear");
 #define PRINT_INTERFACE \
@@ -81,6 +84,7 @@ void show_playlist(char* sql);
 /*返回值：
 /*作者：yang
 /*******************************************************************************/
+void init_pipe();
 void show_interface();
 void load_playlist(char* sql_path);
 void do_play();
