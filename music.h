@@ -50,6 +50,17 @@ enum PLAYER_OPTIONS
 		printf("|                                              	        |\n");\
 		printf("---------------------------------------------------------\n");
 		
+#define PRINT_INTERFACE_NEW \
+		printf("---------------------------------------------------------\n");\
+		printf("|       🎵 音 乐 播 放 器         Author: YANG          |\n");\
+		printf("|                                              	        |\n");\
+		printf("|                                          	        |\n");\
+		printf("|       ▶  (1)    ⏸  (2)   ⏪ (3)   ⏩ (4)  ❎ (0)      |\n");\
+		printf("|                                         	        |\n");\
+		printf("|       ⏮  (5)    ⏭  (6)   🔂 (7)   🔁 (8)  🔀 (9)      |\n");\
+		printf("|                                              	        |\n");\
+		printf("---------------------------------------------------------\n");
+//⏮🔇🔊🔉🔈❓ (h)
 	 
 #define SHOW \
 		printf("\t1、播放	\t6、单曲循环\n");\
@@ -89,6 +100,8 @@ void show_interface();
 void load_playlist(char* sql_path);
 void do_play();
 void do_exit();
+void do_forward();
+void do_rewind();
 void do_preview();
 void do_next();
 void menu();

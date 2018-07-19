@@ -10,10 +10,11 @@ char* database2 = "./ring.db";
 
 int main(int argc, char *argv[])
 {
-	
+	//PRINT_INTERFACE_NEW;
 	init_pipe();
 	
 	open_sqlite3(database1);
+	//open_sqlite3(database2);
 	//show_interface();
     //show_playlist(sql_songs_index);
 		

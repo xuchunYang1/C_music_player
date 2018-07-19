@@ -15,8 +15,15 @@ pid_t pid_play_g = 0; //播放进程的pid号
 static int song_index_g = 0; //歌曲索引
 int pipe_fd = -1;  //管道描述符
 
-char fast_forward[] = "seek 10";
-char fast_backward[] = "seek -10";
+
+//mplayer 命令 以'\n'作为结束
+char pause_play[] = "pause\n";
+char valume_off[] = "mute 1\n";
+char valume_on[] = "mute 0\n";
+//char volume_add[] = "volume 1\n";
+//char volume_sub[] = "volume 1\n";   
+char fast_forward[] = "seek 10\n";
+char fast_backward[] = "seek -10\n";
 /*****************************************************************************
 /*名称： show_playlist
 /*描述： show play list
@@ -46,6 +53,7 @@ void show_playlist(char* sql)
 void init_pipe()
 {
 	int res;
+#if 0
 	if (access("./cmdfifo", F_OK) == 0)
 	{
 		//管道文件存在,删除重建
@@ -67,8 +75,21 @@ void init_pipe()
 			exit(1);
 		}
 	}
+#endif
 	
-	pipe_fd = open("./cmdfifo", O_WRONLY|O_NONBLOCK); //只写非阻塞打开管道|O_NONBLOCK)
+	unlink("./cmdfifo");
+	res = mkfifo("./cmdfifo", 0777);
+	if (res != 0)
+	{
+		fprintf(stderr, "Could not create fifo %s\n", "./cmdfifo");
+		exit(1);
+	}
+	else
+	{
+			printf("fifo success res = %d\n", res);	
+	}
+	
+	pipe_fd = open("./cmdfifo", O_RDWR|O_NONBLOCK); //可读可写非阻塞打开管道
 	printf("pipe_fd = %d\n", pipe_fd);
 	if (pipe_fd < 0)
 	{
@@ -127,16 +148,16 @@ void do_play()
 		printf("fork error\n");
 		exit(1);
 	}
-	else if (pid_play_g == 0) //子进程  "-idle"
+	else if (pid_play_g == 0) //子进程  "-idle"播放完之后不退出
 	{
-		execl("/usr/bin/mplayer", "mplayer", "-slave", "-quiet", "-input", "file=./cmdfifo",  song_path[song_index_g], NULL);
-		show_interface();
-		printf("son process %s \n",song_path[song_index_g]);
+		execl("/usr/bin/mplayer", "mplayer", "-slave", "-quiet", "-idle", "-input", "file=./cmdfifo",  song_path[song_index_g], NULL);
+		//show_interface();
+		//printf("son process %s \n",song_path[song_index_g]);
 	}
 	else //父进程
 	{
-		show_interface();
-		printf("parent process %s \n",song_path[song_index_g]);
+		//show_interface();
+		//printf("parent process %s \n",song_path[song_index_g]);
 #if 0
 		printf("parent process %s \n",song_path[song_index_g]);
 		ret = wait(&status);
@@ -207,15 +228,66 @@ void do_next()
 }
 /*****************************************************************************
 /*名称： do_forward
-/*描述：  播放歌曲
+/*描述：  快进10秒
 /*作成日期：2018/07/17
 /*参数：
 /*返回值：
 /*作者：yang
 /*******************************************************************************/
+static int fast = 0; //test
 void do_forward()
 {	
-	write(pipe_fd, "seek 10", sizeof(fast_forward));
+	++fast;
+	int ret;
+	ret = write(pipe_fd, fast_forward, sizeof(fast_forward));
+	if (ret == -1)
+	{
+		printf("write failed\n");
+		exit(1);
+	}
+	printf("ret = %d\n", ret);
+	printf("fast number = %d\n", fast);
+}
+/*****************************************************************************
+/*名称： do_rewind
+/*描述：  快退10秒
+/*作成日期：2018/07/17
+/*参数：
+/*返回值：
+/*作者：yang
+/*******************************************************************************/
+void do_rewind()
+{	
+	int ret;
+	ret = write(pipe_fd, fast_backward, sizeof(fast_backward));
+	if (ret == -1)
+	{
+		printf("write failed\n");
+		exit(1);
+	}
+	//printf("ret = %d\n", ret);
+}
+/*****************************************************************************
+/*名称： do_pause
+/*描述：  pause
+/*作成日期：2018/07/17
+/*参数：
+/*返回值：
+/*作者：yang
+/*******************************************************************************/
+static int pause_num = 0; //test
+void do_pause()
+{
+	++pause_num;
+	int ret;
+	ret = write(pipe_fd, pause_play, sizeof(pause_play));
+	if (ret == -1)
+	{
+		printf("write failed\n");
+		exit(1);
+	}
+	//printf("ret = %d\n", ret);
+	printf("pause number = %d\n", pause_num);
 }
 /*****************************************************************************
 /*名称： menu
@@ -230,7 +302,6 @@ void menu()
 	char ensure_exit = 0;
 	char exit_flag = 1;
 	char option = 'x';  //初始化为x,因为菜单里有0
-
 	while (exit_flag)
 	{
 		show_interface();  //显示菜单界面
@@ -246,6 +317,7 @@ void menu()
 					 	if (ensure_exit == 'y')
 					 	{
 					 		exit_flag = 0;
+					 		close(pipe_fd); //关闭管道
 					 		// 杀死相关子进程
 					 		kill(pid_play_g, 9);
 					 		printf("已退出, 欢迎使用!\n");
@@ -260,7 +332,8 @@ void menu()
 				do_preview();
 			break;
 			case PAUSE:  // 暂停
-
+				printf("PAUSE\n");
+				do_pause();
 			break;
 			case SWITCH_NEXT:  //下一曲
 				printf("NEXT!\n");
