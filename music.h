@@ -11,6 +11,7 @@
 
 /* Include heads */
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -18,39 +19,29 @@
 #include <sys/wait.h>
 #include <termios.h>
 #include <sys/stat.h>
+#include <pthread.h>
 #include "manipulate_sqlite3.h"  
-
 
 enum PLAYER_OPTIONS
 {
 	QUIT = '0',
 	PLAY,
-	SWITCH_PREVIEW,
 	PAUSE,
+	SWITCH_PREVIEW,	
 	SWITCH_NEXT,
+	FAST_BACKWARD,
 	FAST_FORWARD,
 	SINGLE_LOOP,
 	LIST_LOOP,
-	RANDOM,
-	HELPME
-};
+	RANDOM,	
+};	 
 // some defines
 #define MAXB 128
 #define FIFO "./cmdfifo"
 #define MAXSONGNUM 6
 #define CLEAR system("clear");
-#define PRINT_INTERFACE \
-		printf("---------------------------------------------------------\n");\
-		printf("|       🎵 音 乐 播 放 器         Author: YANG          |\n");\
-		printf("|                                              	        |\n");\
-		printf("|                                          	        |\n");\
-		printf("|       ▶ (1)   ⏪ (2)  ⏸  (3)   ⏩ (4)  ⏭  (5)         |\n");\
-		printf("|                                         	        |\n");\
-		printf("|       🔂 (6)  🔁 (7)  🔀 (8)   ❓ (9)  ❎ (0)         |\n");\
-		printf("|                                              	        |\n");\
-		printf("---------------------------------------------------------\n");
 		
-#define PRINT_INTERFACE_NEW \
+#define PRINT_INTERFACE \
 		printf("---------------------------------------------------------\n");\
 		printf("|       🎵 音 乐 播 放 器         Author: YANG          |\n");\
 		printf("|                                              	        |\n");\
@@ -59,9 +50,10 @@ enum PLAYER_OPTIONS
 		printf("|                                         	        |\n");\
 		printf("|       ⏮  (5)    ⏭  (6)   🔂 (7)   🔁 (8)  🔀 (9)      |\n");\
 		printf("|                                              	        |\n");\
-		printf("---------------------------------------------------------\n");
-//⏮🔇🔊🔉🔈❓ (h)
-	 
+		printf("---------------------------------------------------------\n");\
+		printf("\n");
+
+
 #define SHOW \
 		printf("\t1、播放	\t6、单曲循环\n");\
 		printf("\t2、上一曲	7、列表循环\n");\

@@ -14,7 +14,7 @@ extern char* song_path[MAXSONGNUM];
 pid_t pid_play_g = 0; //播放进程的pid号
 static int song_index_g = 0; //歌曲索引
 int pipe_fd = -1;  //管道描述符
-
+pthread_t tid;  //线程ID
 
 //mplayer 命令 以'\n'作为结束
 char pause_play[] = "pause\n";
@@ -109,7 +109,6 @@ void show_interface()
 {
 	CLEAR;
 	PRINT_INTERFACE;
-	//SHOW;
 }
 /*****************************************************************************
 /*名称： load_playlist
@@ -140,6 +139,7 @@ void do_play()
 	{
 		printf("kill pid %d \n",pid_play_g);
 		kill(pid_play_g, 9);
+		pid_play_g = 0;
 	}
 
 	pid_play_g = fork();
@@ -150,31 +150,25 @@ void do_play()
 	}
 	else if (pid_play_g == 0) //子进程  "-idle"播放完之后不退出
 	{
-		execl("/usr/bin/mplayer", "mplayer", "-slave", "-quiet", "-idle", "-input", "file=./cmdfifo",  song_path[song_index_g], NULL);
-		//show_interface();
-		//printf("son process %s \n",song_path[song_index_g]);
+		execl("/usr/bin/mplayer", "mplayer", "-slave", "-quiet", 
+					"-input", "file=./cmdfifo", song_path[song_index_g], NULL);		
 	}
-	else //父进程
-	{
-		//show_interface();
-		//printf("parent process %s \n",song_path[song_index_g]);
-#if 0
-		printf("parent process %s \n",song_path[song_index_g]);
-		ret = wait(&status);
-		if (ret < 0)
-		{
-			printf("wait error\n");
-			exit(1);
-		}
-
-		if (WIFSIGNALED(status)) //手动切换,异常退出
-		{
-			//song_index_g++;
-			printf("下一首\n");
-			exit(0);
-		}
-#endif
-	}
+}
+/*******************************************************************************/
+/*名称： do_auto_play
+/*描述：  播放歌曲
+/*作成日期：2018/07/17
+/*参数：
+/*返回值：
+/*作者：yang
+/*******************************************************************************/
+void *thrd_func(void *arg)
+{
+	
+}
+void do_auto_play()
+{	
+	//pthread_create(&tid, NULL,)
 }
 /*******************************************************************************/
 /*名称： do_exit
@@ -198,6 +192,7 @@ void do_exit()
 /*******************************************************************************/
 void do_preview()
 {
+	printf("PREVIEW!\n");
 	--song_index_g;
 	
 	if (song_index_g < 0)
@@ -218,6 +213,7 @@ void do_preview()
 /*******************************************************************************/
 void do_next()
 {
+	printf("NEXT!\n");
 	++song_index_g;
 	if (song_index_g >= MAXSONGNUM)
 	{
@@ -239,14 +235,15 @@ void do_forward()
 {	
 	++fast;
 	int ret;
-	ret = write(pipe_fd, fast_forward, sizeof(fast_forward));
-	if (ret == -1)
+	ret = write(pipe_fd, fast_forward, strlen(fast_forward)); //sizeof(fast_forward)
+	if (ret == -1)						//此处是strlen,不计算最后一个'\0',而sizeof计算的是整个存储的长度
 	{
 		printf("write failed\n");
 		exit(1);
 	}
-	printf("ret = %d\n", ret);
-	printf("fast number = %d\n", fast);
+	//printf("strlen ret = %d\n", ret); 
+	//printf("sizeof ret = %d\n", sizeof(fast_forward));
+	//printf("fast number = %d\n", fast);
 }
 /*****************************************************************************
 /*名称： do_rewind
@@ -259,7 +256,7 @@ void do_forward()
 void do_rewind()
 {	
 	int ret;
-	ret = write(pipe_fd, fast_backward, sizeof(fast_backward));
+	ret = write(pipe_fd, fast_backward, strlen(fast_backward));
 	if (ret == -1)
 	{
 		printf("write failed\n");
@@ -275,19 +272,19 @@ void do_rewind()
 /*返回值：
 /*作者：yang
 /*******************************************************************************/
-static int pause_num = 0; //test
+//static int pause_num = 0; //test
 void do_pause()
 {
-	++pause_num;
+	//++pause_num;
 	int ret;
-	ret = write(pipe_fd, pause_play, sizeof(pause_play));
+	ret = write(pipe_fd, pause_play, strlen(pause_play));
 	if (ret == -1)
 	{
 		printf("write failed\n");
 		exit(1);
 	}
 	//printf("ret = %d\n", ret);
-	printf("pause number = %d\n", pause_num);
+	//printf("pause number = %d\n", pause_num);
 }
 /*****************************************************************************
 /*名称： menu
@@ -324,11 +321,11 @@ void menu()
 					 	}
 			break;
 			case PLAY: // 开始播放
-				printf("PLAY!\n");
-				do_play();
+				//printf("PLAY!\n");
+				do_auto_play();
 			break;
 			case SWITCH_PREVIEW:  // 上一曲
-				printf("PREVIEW!\n");
+				//printf("PREVIEW!\n");
 				do_preview();
 			break;
 			case PAUSE:  // 暂停
@@ -336,12 +333,17 @@ void menu()
 				do_pause();
 			break;
 			case SWITCH_NEXT:  //下一曲
-				printf("NEXT!\n");
+				//printf("NEXT!\n");
 				do_next();
 			break;
 			case FAST_FORWARD:  //快进
-				printf("FAST_FORWARD\n");
+				//printf("FAST_FORWARD\n");
 				do_forward();
+				
+			break;
+			case FAST_BACKWARD:  //快退
+				//printf("FAST_BACKWARD\n");
+				do_rewind();
 				
 			break;
 			case SINGLE_LOOP: //单曲播放
@@ -353,10 +355,10 @@ void menu()
 			case RANDOM:  //随机播放
 
 			break;
-			case HELPME: // 帮助 枚举不能与宏定义同名
-			show_interface();	
-			printf("haha process %s \n",song_path[song_index_g]);
-			break;
+			//case HELPME: // 帮助 枚举不能与宏定义同名
+			//show_interface();	
+			//printf("haha process %s \n",song_path[song_index_g]);
+			//break;
 			
 		}
 	}
