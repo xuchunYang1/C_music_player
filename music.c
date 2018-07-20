@@ -15,7 +15,8 @@ pid_t pid_play_g = 0; //播放进程的pid号
 static int song_index_g = 0; //歌曲索引
 int pipe_fd = -1;  //管道描述符
 pthread_t tid;  //线程ID
-
+sem_t sem_exit_all_thread; //线程退出信号
+pthread_mutex_t mutex_for_index = PTHREAD_MUTEX_INITIALIZER;
 //mplayer 命令 以'\n'作为结束
 char pause_play[] = "pause\n";
 char valume_off[] = "mute 1\n";
@@ -133,7 +134,6 @@ void load_playlist(char* sql_path)
 /*******************************************************************************/
 void do_play()
 {
-	int status;
 	pid_t ret;
 	if (pid_play_g > 0)//pid must greater than 0 : fix system 
 	{
@@ -151,7 +151,9 @@ void do_play()
 	else if (pid_play_g == 0) //子进程  "-idle"播放完之后不退出
 	{
 		execl("/usr/bin/mplayer", "mplayer", "-slave", "-quiet", 
-					"-input", "file=./cmdfifo", song_path[song_index_g], NULL);		
+					"-input", "file=./cmdfifo", song_path[song_index_g], NULL);
+		pid_play_g = 0;
+		printf("son exit\n\n\n");	
 	}
 }
 /*******************************************************************************/
@@ -162,26 +164,65 @@ void do_play()
 /*返回值：
 /*作者：yang
 /*******************************************************************************/
-void *thrd_func(void *arg)
+void init_sem()
 {
+	int ret;
+	ret = sem_init(&sem_exit_all_thread, 0, 0);
+	if (ret != 0)
+	{
+		printf("sem_init error\n");
+	}
+}
+
+void init_mutex()
+{
+	pthread_mutex_init(&mutex_for_index, NULL);
+}
+void *thread_process(void *arg) //线程函数
+{
+	int ret;
+	int status;
+	struct timespec ts; //定义一个时间结构体变量
+	printf("in thread\n");
+	while (1)
+	{	
+		printf("index = %d\n", song_index_g);
 	
+		if (pid_play_g > 0) //有歌曲正在播放，阻塞等待
+		{
+			printf("waitpid pid_play_g = %d\n", pid_play_g);
+			waitpid(pid_play_g, &status, 0);
+		}
+		else
+		{
+			clock_gettime(CLOCK_REALTIME, &ts); //
+			ts.tv_sec += 1;
+			//等待退出信号　非阻塞
+			ret = sem_timedwait(&sem_exit_all_thread, &ts);
+
+			if (ret == -1)
+			{
+			
+			}
+			else
+			{
+				printf("receive exit signal\n");
+				break;
+			}
+		}
+
+		do_next();
+		
+	}
 }
 void do_auto_play()
 {	
-	//pthread_create(&tid, NULL,)
+	pthread_create(&tid, NULL, thread_process, NULL);
+	
+	//pthread_join(tid, NULL); //等待线程退出
+	//sem_destroy(&sem_exit_all_thread);
 }
-/*******************************************************************************/
-/*名称： do_exit
-/*描述：  播放歌曲
-/*作成日期：2018/07/17
-/*参数：
-/*返回值：
-/*作者：yang
-/*******************************************************************************/
-void do_exit()
-{
 
-}
 /*******************************************************************************/
 /*名称： do_preview
 /*描述：  播放歌曲
@@ -193,6 +234,7 @@ void do_exit()
 void do_preview()
 {
 	printf("PREVIEW!\n");
+	pthread_mutex_lock(&mutex_for_index);
 	--song_index_g;
 	
 	if (song_index_g < 0)
@@ -201,7 +243,7 @@ void do_preview()
 	}
 	
 	do_play();
-	
+	pthread_mutex_unlock(&mutex_for_index);
 }
 /*****************************************************************************
 /*名称： do_next
@@ -214,6 +256,7 @@ void do_preview()
 void do_next()
 {
 	printf("NEXT!\n");
+	pthread_mutex_lock(&mutex_for_index);
 	++song_index_g;
 	if (song_index_g >= MAXSONGNUM)
 	{
@@ -221,6 +264,7 @@ void do_next()
 	}
 
 	do_play();
+	pthread_mutex_unlock(&mutex_for_index);
 }
 /*****************************************************************************
 /*名称： do_forward
@@ -233,6 +277,7 @@ void do_next()
 static int fast = 0; //test
 void do_forward()
 {	
+	printf("FAST_FORWARD\n");
 	++fast;
 	int ret;
 	ret = write(pipe_fd, fast_forward, strlen(fast_forward)); //sizeof(fast_forward)
@@ -286,6 +331,10 @@ void do_pause()
 	//printf("ret = %d\n", ret);
 	//printf("pause number = %d\n", pause_num);
 }
+void do_exit()
+{
+	sem_post(&sem_exit_all_thread);
+}
 /*****************************************************************************
 /*名称： menu
 /*描述： 播放菜单
@@ -293,7 +342,8 @@ void do_pause()
 /*参数：无
 /*返回值：
 /*作者：yang
-/*******************************************************************************/
+/***********
+/********************************************************************/
 void menu()
 {
 	char ensure_exit = 0;
@@ -306,7 +356,8 @@ void menu()
 		option = getchar();
 		switch (option)
 		{
-			case QUIT:
+			case QUIT:	
+						
 						printf("确定退出吗？(y/n)\n"); //退出
 					 	while (kbhit() == 0);
 					 	ensure_exit = getchar();
@@ -315,6 +366,8 @@ void menu()
 					 	{
 					 		exit_flag = 0;
 					 		close(pipe_fd); //关闭管道
+					 		do_exit();
+					 		pthread_exit(NULL);
 					 		// 杀死相关子进程
 					 		kill(pid_play_g, 9);
 					 		printf("已退出, 欢迎使用!\n");

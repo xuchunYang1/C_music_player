@@ -20,6 +20,11 @@
 #include <termios.h>
 #include <sys/stat.h>
 #include <pthread.h>
+#include <semaphore.h>
+#include <time.h>
+#include <assert.h>
+#include <errno.h>
+#include <signal.h>
 #include "manipulate_sqlite3.h"  
 
 enum PLAYER_OPTIONS
@@ -87,6 +92,7 @@ void show_playlist(char* sql);
 /*返回值：
 /*作者：yang
 /*******************************************************************************/
+void init_sem();
 void init_pipe();
 void show_interface();
 void load_playlist(char* sql_path);
