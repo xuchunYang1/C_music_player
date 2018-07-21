@@ -15,6 +15,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <termios.h>
@@ -25,6 +28,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
+#include <stdbool.h>
 #include "manipulate_sqlite3.h"  
 
 enum PLAYER_OPTIONS
@@ -44,6 +48,8 @@ enum PLAYER_OPTIONS
 #define MAXB 128
 #define FIFO "./cmdfifo"
 #define MAXSONGNUM 6
+#define MY_SEM_KEY 1234
+
 #define CLEAR system("clear");
 		
 #define PRINT_INTERFACE \

@@ -193,27 +193,26 @@ void *thread_process(void *arg) //线程函数
 			printf("waitpid pid_play_g = %d\n", pid_play_g);
 			waitpid(pid_play_g, &status, 0);
 		}
+		
+		clock_gettime(CLOCK_REALTIME, &ts); //
+		ts.tv_sec += 1;
+		//等待退出信号　非阻塞
+		ret = sem_timedwait(&sem_exit_all_thread, &ts);
+
+		if (ret == -1)
+		{
+		
+		}
 		else
 		{
-			clock_gettime(CLOCK_REALTIME, &ts); //
-			ts.tv_sec += 1;
-			//等待退出信号　非阻塞
-			ret = sem_timedwait(&sem_exit_all_thread, &ts);
-
-			if (ret == -1)
-			{
-			
-			}
-			else
-			{
-				printf("receive exit signal\n");
-				break;
-			}
+			printf("receive exit signal\n");
+			break;
 		}
-
-		do_next();
 		
+		do_next();
+
 	}
+	pthread_exit(0);
 }
 void do_auto_play()
 {	
@@ -349,6 +348,7 @@ void menu()
 	char ensure_exit = 0;
 	char exit_flag = 1;
 	char option = 'x';  //初始化为x,因为菜单里有0
+	bool auto_play_flag = false;
 	while (exit_flag)
 	{
 		show_interface();  //显示菜单界面
@@ -367,27 +367,54 @@ void menu()
 					 		exit_flag = 0;
 					 		close(pipe_fd); //关闭管道
 					 		do_exit();
-					 		pthread_exit(NULL);
-					 		// 杀死相关子进程
+					 		//pthread_exit(NULL);
 					 		kill(pid_play_g, 9);
+					 		pid_play_g = 0;
+					 		pthread_join(tid, NULL);
+					 		// 杀死相关子进程
+
 					 		printf("已退出, 欢迎使用!\n");
 					 	}
 			break;
 			case PLAY: // 开始播放
 				//printf("PLAY!\n");
+				if (auto_play_flag)
+				{
+					do_exit();
+					pthread_join(tid, NULL);
+				}
+				auto_play_flag = true;
 				do_auto_play();
 			break;
 			case SWITCH_PREVIEW:  // 上一曲
 				//printf("PREVIEW!\n");
 				do_preview();
+				//删除自动播放进程
+				do_exit();
+		 		pthread_join(tid, NULL);
+		 		do_auto_play();
 			break;
 			case PAUSE:  // 暂停
 				printf("PAUSE\n");
 				do_pause();
 			break;
 			case SWITCH_NEXT:  //下一曲
-				//printf("NEXT!\n");
-				do_next();
+				if(auto_play_flag)
+				{
+					//printf("NEXT!\n");
+					do_next();
+					//删除自动播放进程
+					do_exit();
+			 		pthread_join(tid, NULL);
+			 		do_auto_play();
+				}
+				else
+				{
+					//printf("NEXT!\n");
+					do_next();
+			 		do_auto_play();
+			 		auto_play_flag = true;
+				}
 			break;
 			case FAST_FORWARD:  //快进
 				//printf("FAST_FORWARD\n");
